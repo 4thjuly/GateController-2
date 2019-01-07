@@ -6,30 +6,31 @@
  */
 metadata {
 	definition (name: "Photon Gate Controller", namespace: "4thjuly", author: "Ian Ellison-Taylor") {
-/*
 		capability "Lock"
-		capability "Switch"
-		capability "Motion Sensor"
-		capability "Garage Door Control"
-		capability "Contact Sensor"
-*/
-        capability "Momentary"
         capability "Switch"
         capability "Polling"
+		capability "Contact Sensor"
 	}
-
 
 	simulator {
 		// TODO: define status and reply messages here
 	}
 
 	tiles(scale: 2) {
+ 
         standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: false, decoration: "flat") {
             state "off", label: "Closed", action: "switch.on", icon: "st.doors.garage.garage-closed", backgroundColor: "#ffffff"
             state "on", label: "Open", action: "switch.off", icon: "st.doors.garage.garage-open", backgroundColor: "#00a0dc"
         }
-        main "switch"
-        details "switch"
+        standardTile("lock", "device.lock", width: 2, height: 2, canChangeIcon: false, decoration: "flat") {
+            state "locked", label: "Locked", action: "lock.unlock", icon: "st.locks.lock.locked", backgroundColor: "#A0D0B0"
+            state "unlocked", label: "Unlocked", action: "lock.lock", icon: "st.locks.lock.unlocked", backgroundColor: "#ffffff"
+        }
+        standardTile("contact", "device.contact", width: 2, height: 2, canChangeIcon: false, decoration: "flat") {
+            state "open", label: "Open", icon: "st.contact.contact.open", backgroundColor: "#00a0dc"
+            state "closed", label: "Closed", icon: "st.contact.contact.closed", backgroundColor: "#fffff"
+        }
+        
     }
     
     preferences {
@@ -50,52 +51,69 @@ def installed() {
 def updated() {
     log.debug "Updated: ${new Date()}"
     unschedule()
-    runEvery5Minutes(refresh)
+    runEvery1Minute(refresh)
 }
 
 def refresh() {
     log.debug "Refresh: ${new Date()}"
+    getDeviceStatus();
 }
 
 // parse events into attributes
 def parse(String description) {
 	log.debug "Parsing '${description}'"
-	// TODO: handle 'contact' attribute
-	// TODO: handle 'door' attribute
-	// TODO: handle 'lock' attribute
-	// TODO: handle 'motion' attribute
 }
 
-// handle commands
+// Open gate
 def on() {
 	log.debug "Executing 'on'"
     sendToDevice("on");
     sendEvent(name: 'switch', value: 'on')
+    sendEvent(name: 'contact', value: 'open')
+    getDeviceStatus();
 }
 
+// Close gate
 def off() {
 	log.debug "Executing 'off'"
     sendToDevice("off");
     sendEvent(name: 'switch', value: 'off')
-}
+    sendEvent(name: 'contact', value: 'closed')
+    getDeviceStatus();
+} 
 
 def push() {
 	log.debug "Push"
 }
 
+// Lock gate
 def lock() {
 	log.debug "Executing 'lock'"
-	// TODO: handle 'lock' command
+    sendEvent(name: 'lock', value: 'locked')
 }
 
+// Unlock gate 
 def unlock() {
 	log.debug "Executing 'unlock'"
-	// TODO: handle 'unlock' command
+    sendEvent(name: 'lock', value: 'unlocked')
 }
 
 private sendToDevice(cmd) {
-	httpPost(
-		uri: "https://api.particle.io/v1/devices/${deviceId}/setLED",
-        body: [access_token: token, command: cmd],  
-	) {response -> log.debug (response.data)}
+	try {
+        httpPost(uri: "https://api.particle.io/v1/devices/${deviceId}/setLED", body:[access_token: token, command: cmd]) {
+            response -> log.debug "sendToDevice: $response.data"
+        }
+    } catch (exc) {
+    	log.debug "Exception: $exc"
+    }     
+}
+
+private getDeviceStatus() {
+	try {
+        httpGet("https://api.particle.io/v1/devices/${deviceId}/isMotion?access_token=${token}") {
+            response -> log.debug "getDeviceStatus: $response.data"
+        }
+    } catch (exc) {
+    	log.debug "Exception: $exc"
+    }
 }
