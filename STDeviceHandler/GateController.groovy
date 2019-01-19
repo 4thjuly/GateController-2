@@ -73,7 +73,6 @@ def on() {
 	log.debug "Executing 'on'"
     sendToDevice("setGateOpen", "open");
     sendEvent(name: 'switch', value: 'on')
-    // sendEvent(name: 'contact', value: 'open') // Test
     getDeviceStatus();
 }
 
@@ -82,7 +81,6 @@ def off() {
 	log.debug "Executing 'off'"
     sendToDevice("setGateOpen", "close");
     sendEvent(name: 'switch', value: 'off')
-    // sendEvent(name: 'contact', value: 'closed')
     getDeviceStatus();
 } 
 
@@ -100,7 +98,7 @@ def lock() {
 // Unlock gate 
 def unlock() {
 	log.debug "Executing 'unlock'"
-    sendToDevice("setGateLock", "unlock");
+    sendToDevice("setGateLock", "unlock")
     sendEvent(name: 'lock', value: 'unlocked')
 }
 
@@ -115,16 +113,23 @@ private sendToDevice(key, cmd) {
     }     
 }
 
-private getDeviceStatus() {
-    // TODO - Get status for isOpenConfirmed, isLocked
-    getDeviceStatus("isOpenConfirmed");
-    getDeviceStatus("isLocked");
-}
-
 private getDeviceStatus(key) {
 	try {
-        httpGet("https://api.particle.io/v1/devices/${deviceId}/${key}?access_token=${token}") {
-            response -> log.debug "getDeviceStatus: $response.data.name $response.data.result"
+        httpGet("https://api.particle.io/v1/devices/${deviceId}/isLocked?access_token=${token}") { response -> 
+     		log.debug "getDeviceStatus: $response.data.name $response.data.result"           
+            if (response.data.result == true) { 
+                sendEvent(name: 'lock', value: 'locked')
+            } else {
+                sendEvent(name: 'lock', value: 'unlocked')
+            }
+        }
+        httpGet("https://api.particle.io/v1/devices/${deviceId}/isOpenConfirmed?access_token=${token}") { response -> 
+            log.debug "getDeviceStatus: $response.data.name $response.data.result"           
+            if (response.data.result == true) { 
+                sendEvent(name: 'contact', value: 'open')
+            } else {
+                sendEvent(name: 'contact', value: 'closed')
+            }
         }
     } catch (exc) {
     	log.debug "Exception: $exc"
