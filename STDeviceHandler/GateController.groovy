@@ -67,18 +67,18 @@ def parse(String description) {
 // Open gate
 def on() {
 	log.debug "Executing 'on'"
-    sendToDevice("on");
+    sendToDevice("setGateOpen", "open");
     sendEvent(name: 'switch', value: 'on')
-    sendEvent(name: 'contact', value: 'open')
+    // sendEvent(name: 'contact', value: 'open') // Test
     getDeviceStatus();
 }
 
 // Close gate
 def off() {
 	log.debug "Executing 'off'"
-    sendToDevice("off");
+    sendToDevice("setGateOpen", "close");
     sendEvent(name: 'switch', value: 'off')
-    sendEvent(name: 'contact', value: 'closed')
+    // sendEvent(name: 'contact', value: 'closed')
     getDeviceStatus();
 } 
 
@@ -89,18 +89,21 @@ def push() {
 // Lock gate
 def lock() {
 	log.debug "Executing 'lock'"
+    sendToDevice("setGateLock", "lock");
     sendEvent(name: 'lock', value: 'locked')
 }
 
 // Unlock gate 
 def unlock() {
 	log.debug "Executing 'unlock'"
+    sendToDevice("setGateLock", "unlock");
     sendEvent(name: 'lock', value: 'unlocked')
 }
 
-private sendToDevice(cmd) {
+// TODO - sendEvent on response
+private sendToDevice(key, cmd) {
 	try {
-        httpPost(uri: "https://api.particle.io/v1/devices/${deviceId}/setLED", body:[access_token: token, command: cmd]) {
+        httpPost(uri: "https://api.particle.io/v1/devices/${deviceId}/${key}", body:[access_token: token, command: cmd]) {
             response -> log.debug "sendToDevice: $response.data"
         }
     } catch (exc) {
@@ -109,9 +112,15 @@ private sendToDevice(cmd) {
 }
 
 private getDeviceStatus() {
+    // TODO - Get status for isOpen, isLocked
+    getDeviceStatus("isOpen");
+    getDeviceStatus("isLocked");
+}
+
+private getDeviceStatus(key) {
 	try {
-        httpGet("https://api.particle.io/v1/devices/${deviceId}/isMotion?access_token=${token}") {
-            response -> log.debug "getDeviceStatus: $response.data"
+        httpGet("https://api.particle.io/v1/devices/${deviceId}/${key}?access_token=${token}") {
+            response -> log.debug "getDeviceStatus: $response.data.name $response.data.result"
         }
     } catch (exc) {
     	log.debug "Exception: $exc"
