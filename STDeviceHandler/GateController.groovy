@@ -70,17 +70,15 @@ def parse(String description) {
 
 // Open gate
 def on() {
-	log.debug "Executing 'on'"
-    sendToDevice("setGateOpen", "open");
-    sendEvent(name: 'switch', value: 'on')
+	log.debug "Executing 'on' (Gate open)"
+    sendToDevice("setGateOpen", "open", "switch", "on");
     getDeviceStatus();
 }
 
 // Close gate
 def off() {
-	log.debug "Executing 'off'"
-    sendToDevice("setGateOpen", "close");
-    sendEvent(name: 'switch', value: 'off')
+	log.debug "Executing 'off' (Gate close)"
+    sendToDevice("setGateOpen", "close", "switch", "off");
     getDeviceStatus();
 } 
 
@@ -91,22 +89,23 @@ def push() {
 // Lock gate
 def lock() {
 	log.debug "Executing 'lock'"
-    sendToDevice("setGateLock", "lock");
-    sendEvent(name: 'lock', value: 'locked')
+    sendToDevice("setGateLock", "lock", "lock", "locked")
 }
 
 // Unlock gate 
 def unlock() {
 	log.debug "Executing 'unlock'"
-    sendToDevice("setGateLock", "unlock")
-    sendEvent(name: 'lock', value: 'unlocked')
+    sendToDevice("setGateLock", "unlock", "lock", "unlocked")
 }
 
-// TODO - sendEvent on response
-private sendToDevice(key, cmd) {
+private sendToDevice(key, cmd, eventName, eventValue) {
 	try {
-        httpPost(uri: "https://api.particle.io/v1/devices/${deviceId}/${key}", body:[access_token: token, command: cmd]) {
-            response -> log.debug "sendToDevice: $response.data"
+        httpPost(uri: "https://api.particle.io/v1/devices/${deviceId}/${key}", body:[access_token: token, command: cmd]) { response -> 
+            log.debug "sendToDevice: $cmd $response.data.return_value"
+            // Send event on success
+            if (response.data.return_value == 1) {
+                sendEvent(name: eventName, value: eventValue)
+            }
         }
     } catch (exc) {
     	log.debug "Exception: $exc"
