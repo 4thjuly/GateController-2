@@ -23,6 +23,9 @@ bool lastMotion = isMotion;
 bool lastLocked = isLocked;
 bool lastOpen = isOpen;
 
+system_tick_t lastLockTime = 0;
+system_tick_t lastUnlockTime = 0;
+
 void setup() {
     // Wait a bit for the network but then just start
 
@@ -66,23 +69,27 @@ int setGateOpen(String command) {
     return -1;
 }
 
-// TODO
-// Set lock\unlock times
-//
+void gateLock() {
+    digitalWrite(GATE_LOCK_RELAY, GATE_RELAY2_LOCK);
+    lastLockTime = Time.now();
+    Particle.publish("Locking", String::format("%02d:%02d", Time.hour(lastLockTime), Time.minute(lastLockTime)));
+}
 
+void gateUnlock() {
+    digitalWrite(GATE_LOCK_RELAY, GATE_RELAY2_UNLOCK);
+    lastUnlockTime = Time.now();
+    Particle.publish("Unlocking", String::format("%02d:%02d", Time.hour(lastUnlockTime), Time.minute(lastUnlockTime)));
+}
 
 // NB Default is low (gate unlocked)
 int setGateLock(String command) {
     if (command == "lock") {
-        digitalWrite(GATE_LOCK_RELAY, GATE_RELAY2_LOCK);
-        Particle.publish("Locking", "true");
+        gateLock();
         return 1;
     } else if (command == "unlock") {
-        digitalWrite(GATE_LOCK_RELAY, GATE_RELAY2_UNLOCK);
-        Particle.publish("Unlocking", "true");
+        gateUnlock();
         return 0;
     }
-
     return -1;
 }
 
@@ -99,12 +106,13 @@ int setLED(String command) {
     return -1;
 }
 
-// NB Max publish is about 1 per second
-void loop() {
+void updateVariables() {
     isMotion = digitalRead(MOTION_SENSOR) == MOTION_DETECTED ? true : false;
     isLocked = digitalRead(GATE_LOCK_RELAY) == GATE_RELAY2_LOCK ? true : false;
     isOpen = digitalRead(GATE_SENSOR) == GATE_SENSOR_OPEN ? true : false;
+}
 
+void sendEvents() {
     if (Particle.connected()) {
         if (isMotion != lastMotion) {
             if (Particle.publish("Motion", isMotion ? "true" : "false")) {
@@ -122,6 +130,51 @@ void loop() {
             }
         }
     }
+}
+
+// Times are equal ignoring seconds, 0 means time is undefined
+bool timesAreEqual(system_tick_t time1, system_tick_t time2) {
+    if (time1 && time2) {
+        if (Time.hour(time1) == Time.hour(time2) && Time.minute(time2) == Time.minute(time2)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Automatically lock and unlock the same time everyday in case the internet goes down
+// The time is set via manually locking and unlocking
+void autoLockUnlock() {
+    system_tick_t now = Time.now();
+
+    // NB If we just manually locked\unlocked then don't auto-lock\unlock for a minute
+    if (timesAreEqual(now, lastLockTime) || timesAreEqual(now, lastUnlockTime)) {
+        return;
+    }
+    
+    // NB if lock and unlock times are the same then lock takes precedent
+    if (timesAreEqual(lastLockTime, lastUnlockTime)) {
+        if (!isLocked) gateLock();
+        return;
+    }
+
+    if (isLocked && timesAreEqual(now, lastUnlockTime)) {
+        gateUnlock();
+        return;
+    }
+
+    if (!isLocked && timesAreEqual(now, lastLockTime)) {
+        gateLock();
+        return;
+    }
+}
+
+// NB Max publish is about 1 per second
+void loop() {
+
+    updateVariables();
+    sendEvents();
+    autoLockUnlock();
 
     delay(1000);
 }
