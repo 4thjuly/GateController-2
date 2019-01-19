@@ -59,14 +59,14 @@ int setGateOpen(String command) {
     if (command == "open") {
         digitalWrite(GATE_OPEN_RELAY, GATE_RELAY1_OPEN);
         Particle.publish("Opening", "true");
-        return 1;
+        return 1; // Success
     } else if (command == "close") {
         digitalWrite(GATE_OPEN_RELAY, GATE_RELAY1_CLOSE);
         Particle.publish("Closing", "true");
-        return 0;
+        return 1; // Success
     }
 
-    return -1;
+    return 0; // Error
 }
 
 void gateLock() {
@@ -85,25 +85,25 @@ void gateUnlock() {
 int setGateLock(String command) {
     if (command == "lock") {
         gateLock();
-        return 1;
+        return 1; // Success
     } else if (command == "unlock") {
         gateUnlock();
-        return 0;
+        return 1; // Success
     }
-    return -1;
+    return 0; // Error
 }
 
 // For testing purposes
 int setLED(String command) {
     if (command == "on") {
         digitalWrite(BLUE_LED, HIGH);
-        return 1;
+        return 1; // Success
     } else if (command == "off") {
         digitalWrite(BLUE_LED, LOW);
-        return 0;
+        return 1; // Success
     }
 
-    return -1;
+    return 0; // Error
 }
 
 void updateVariables() {
