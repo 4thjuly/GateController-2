@@ -4,8 +4,8 @@ SYSTEM_THREAD(ENABLED);
 #define GATE_RELAY1_CLOSE LOW          // Relay1 LOW to close gate
 #define GATE_RELAY2_LOCK HIGH          // Relay2 HIGH to lock gate
 #define GATE_RELAY2_UNLOCK LOW         // Relay2 LOW to unlock gate
-#define GATE_SENSOR_OPEN LOW           // Sensor LOW means gate is open (relay closed, shorted)
-#define GATE_SENSOR_CLOSED HIGH        // Sensor HIGH means gate is closed (relay open, pullup)
+#define GATE_SENSOR_GATEOPEN LOW           // Sensor LOW means gate is open (relay closed, shorted)
+#define GATE_SENSOR_GATECLOSED HIGH        // Sensor HIGH means gate is closed (relay open, pullup)
 #define MOTION_DETECTED HIGH
 #define MOTION_NOTDETECTED LOW
 
@@ -15,13 +15,13 @@ int GATE_LOCK_RELAY = D5;
 int GATE_SENSOR     = D6;
 int BLUE_LED        = D7;
 
-bool isMotion   = false;
-bool isOpen     = false;
-bool isLocked   = false;
+bool isMotion         = false;
+bool isOpenConfirmed  = false; // Gate confirmed open by sensor
+bool isLocked         = false;
 
 bool lastMotion = isMotion;
 bool lastLocked = isLocked;
-bool lastOpen = isOpen;
+bool lastOpenConfirmed = isOpenConfirmed;
 
 system_tick_t lastLockTime = 0;
 system_tick_t lastUnlockTime = 0;
@@ -43,13 +43,13 @@ void setup() {
         Particle.function("setGateLock", setGateLock);
 
         Particle.variable("isMotion", isMotion);
-        Particle.variable("isOpen", isOpen);
+        Particle.variable("isOpenConfirmed", isOpenConfirmed);
         Particle.variable("isLocked", isLocked);
     }
 
     Particle.publish("Motion", isMotion ? "true" : "false");
     Particle.publish("Locked", isLocked ? "true" : "false");
-    Particle.publish("Open", isOpen ? "true" : "false");
+    Particle.publish("OpenConfirmed", isOpenConfirmed ? "true" : "false");
 
     Particle.publish("Setup", "Done");
 }
@@ -109,7 +109,7 @@ int setLED(String command) {
 void updateVariables() {
     isMotion = digitalRead(MOTION_SENSOR) == MOTION_DETECTED ? true : false;
     isLocked = digitalRead(GATE_LOCK_RELAY) == GATE_RELAY2_LOCK ? true : false;
-    isOpen = digitalRead(GATE_SENSOR) == GATE_SENSOR_OPEN ? true : false;
+    isOpenConfirmed = digitalRead(GATE_SENSOR) == GATE_SENSOR_GATEOPEN ? true : false;
 }
 
 void sendEvents() {
@@ -124,9 +124,9 @@ void sendEvents() {
                 lastLocked = isLocked;
             }
         }
-        if (isOpen != lastOpen) {
-            if (Particle.publish("Open", isOpen ? "true" : "false")) {
-                lastOpen = isOpen;
+        if (isOpenConfirmed != lastOpenConfirmed) {
+            if (Particle.publish("Open", isOpenConfirmed ? "true" : "false")) {
+                lastOpenConfirmed = isOpenConfirmed;
             }
         }
     }
@@ -134,11 +134,11 @@ void sendEvents() {
 
 // Times are equal ignoring seconds, 0 means time is undefined
 bool timesAreEqual(system_tick_t time1, system_tick_t time2) {
-    if (time1 && time2) {
-        if (Time.hour(time1) == Time.hour(time2) && Time.minute(time2) == Time.minute(time2)) {
-            return true;
-        }
+
+    if (time1 && time2 && Time.hour(time1) == Time.hour(time2) && Time.minute(time2) == Time.minute(time2)) {
+        return true;
     }
+
     return false;
 }
 
@@ -151,7 +151,7 @@ void autoLockUnlock() {
     if (timesAreEqual(now, lastLockTime) || timesAreEqual(now, lastUnlockTime)) {
         return;
     }
-    
+
     // NB if lock and unlock times are the same then lock takes precedent
     if (timesAreEqual(lastLockTime, lastUnlockTime)) {
         if (!isLocked) gateLock();

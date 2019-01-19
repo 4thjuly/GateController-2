@@ -10,6 +10,7 @@ metadata {
         capability "Switch"
         capability "Polling"
 		capability "Contact Sensor"
+        capability "Refresh"
 	}
 
 	simulator {
@@ -30,6 +31,9 @@ metadata {
             state "open", label: "Open", icon: "st.contact.contact.open", backgroundColor: "#00a0dc"
             state "closed", label: "Closed", icon: "st.contact.contact.closed", backgroundColor: "#fffff"
         }
+        standardTile("flatIcon", "device.switch", width: 2, height: 2, decoration: "flat") {
+			state "icon", action:"refresh.refresh", icon:"st.secondary.refresh", defaultState: true
+		}
         
     }
     
@@ -112,8 +116,8 @@ private sendToDevice(key, cmd) {
 }
 
 private getDeviceStatus() {
-    // TODO - Get status for isOpen, isLocked
-    getDeviceStatus("isOpen");
+    // TODO - Get status for isOpenConfirmed, isLocked
+    getDeviceStatus("isOpenConfirmed");
     getDeviceStatus("isLocked");
 }
 
