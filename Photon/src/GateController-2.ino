@@ -6,20 +6,20 @@ SYSTEM_THREAD(ENABLED);
 #define GATE_RELAY2_UNLOCK LOW         // Relay2 LOW to unlock gate
 #define GATE_SENSOR_GATEOPEN LOW           // Sensor LOW means gate is open (relay closed, shorted)
 #define GATE_SENSOR_GATECLOSED HIGH        // Sensor HIGH means gate is closed (relay open, pullup)
-#define MOTION_DETECTED HIGH
-#define MOTION_NOTDETECTED LOW
+// #define MOTION_DETECTED HIGH
+// #define MOTION_NOTDETECTED LOW
 
-int MOTION_SENSOR   = D2;
+// int MOTION_SENSOR   = D2;
 int GATE_OPEN_RELAY = D4;
 int GATE_LOCK_RELAY = D5;
 int GATE_SENSOR     = D6;
 int BLUE_LED        = D7;
 
-bool isMotion         = false;
+// bool isMotion         = false;
 bool isOpenConfirmed  = false; // Gate confirmed open by sensor
-bool isLocked         = false;
+bool isLocked         = false; // Default to being unlocked (eg after power fail)
 
-bool lastMotion = isMotion;
+// bool lastMotion = isMotion;
 bool lastLocked = isLocked;
 bool lastOpenConfirmed = isOpenConfirmed;
 
@@ -29,7 +29,7 @@ system_tick_t lastUnlockTime = 0;
 void setup() {
     // Wait a bit for the network but then just start
 
-    pinMode(MOTION_SENSOR, INPUT);
+    // pinMode(MOTION_SENSOR, INPUT);
     pinMode(GATE_SENSOR, INPUT_PULLUP);
     pinMode(BLUE_LED, OUTPUT);
     pinMode(GATE_OPEN_RELAY, OUTPUT);
@@ -42,16 +42,16 @@ void setup() {
         Particle.function("setGateOpen", setGateOpen);
         Particle.function("setGateLock", setGateLock);
 
-        Particle.variable("isMotion", isMotion);
+        // Particle.variable("isMotion", isMotion);
         Particle.variable("isOpenConfirmed", isOpenConfirmed);
         Particle.variable("isLocked", isLocked);
     }
 
-    Particle.publish("Motion", isMotion ? "true" : "false");
+    // Particle.publish("Motion", isMotion ? "true" : "false");
     Particle.publish("Locked", isLocked ? "true" : "false");
     Particle.publish("OpenConfirmed", isOpenConfirmed ? "true" : "false");
 
-    Particle.publish("Setup", "Done");
+    Particle.publish("Setup", "done");
 }
 
 // NB Default is low (gate closed)
@@ -107,18 +107,18 @@ int setLED(String command) {
 }
 
 void updateVariables() {
-    isMotion = digitalRead(MOTION_SENSOR) == MOTION_DETECTED ? true : false;
+    // isMotion = digitalRead(MOTION_SENSOR) == MOTION_DETECTED ? true : false;
     isLocked = digitalRead(GATE_LOCK_RELAY) == GATE_RELAY2_LOCK ? true : false;
     isOpenConfirmed = digitalRead(GATE_SENSOR) == GATE_SENSOR_GATEOPEN ? true : false;
 }
 
 void sendEvents() {
     if (Particle.connected()) {
-        if (isMotion != lastMotion) {
-            if (Particle.publish("Motion", isMotion ? "true" : "false")) {
-                lastMotion = isMotion;
-            }
-        }
+        // if (isMotion != lastMotion) {
+        //     if (Particle.publish("Motion", isMotion ? "true" : "false")) {
+        //         lastMotion = isMotion;
+        //     }
+        // }
         if (isLocked != lastLocked) {
             if (Particle.publish("Locked", isLocked ? "true" : "false")) {
                 lastLocked = isLocked;
