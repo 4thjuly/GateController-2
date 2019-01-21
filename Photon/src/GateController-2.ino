@@ -45,6 +45,8 @@ void setup() {
         // Particle.variable("isMotion", isMotion);
         Particle.variable("isOpenConfirmed", isOpenConfirmed);
         Particle.variable("isLocked", isLocked);
+        Particle.variable("lastLockTime", lastLockTime);
+        Particle.variable("lastUnlockTime", lastUnlockTime);
     }
 
     // Particle.publish("Motion", isMotion ? "true" : "false");
