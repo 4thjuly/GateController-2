@@ -1,11 +1,11 @@
 SYSTEM_THREAD(ENABLED);
 
-#define GATE_RELAY1_OPEN HIGH          // Relay1 HIGH to open gate
-#define GATE_RELAY1_CLOSE LOW          // Relay1 LOW to close gate
-#define GATE_RELAY2_LOCK HIGH          // Relay2 HIGH to lock gate
-#define GATE_RELAY2_UNLOCK LOW         // Relay2 LOW to unlock gate
-#define GATE_SENSOR_GATEOPEN LOW           // Sensor LOW means gate is open (relay closed, shorted)
-#define GATE_SENSOR_GATECLOSED HIGH        // Sensor HIGH means gate is closed (relay open, pullup)
+#define GATE_RELAY1_OPEN HIGH         // Relay1 HIGH to open gate
+#define GATE_RELAY1_CLOSE LOW         // Relay1 LOW to close gate
+#define GATE_RELAY2_LOCK LOW          // Relay2 LOW to lock gate
+#define GATE_RELAY2_UNLOCK HIGH       // Relay2 HIGH to unlock gate
+#define GATE_SENSOR_GATEOPEN LOW      // Sensor LOW means gate is open (relay closed, shorted)
+#define GATE_SENSOR_GATECLOSED HIGH   // Sensor HIGH means gate is closed (relay open, pullup)
 // #define MOTION_DETECTED HIGH
 // #define MOTION_NOTDETECTED LOW
 
