@@ -54,6 +54,9 @@ void setup() {
     Particle.publish("OpenConfirmed", isOpenConfirmed ? "true" : "false");
 
     Particle.publish("Setup", "done");
+
+    // Default to gate unlocked (say after a power outage)
+    gateUnlock();
 }
 
 // NB Default is low (gate closed)
