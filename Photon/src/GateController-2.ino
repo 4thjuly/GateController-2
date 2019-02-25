@@ -11,7 +11,7 @@ SYSTEM_THREAD(ENABLED);
 
 // int MOTION_SENSOR   = D2;
 int GATE_OPEN_RELAY = D2;
-int GATE_LOCK_RELAY = D4;
+int GATE_LOCK_RELAY = D3;
 int GATE_SENSOR     = D6;
 int BLUE_LED        = D7;
 
@@ -35,19 +35,22 @@ void setup() {
     pinMode(GATE_OPEN_RELAY, OUTPUT);
     pinMode(GATE_LOCK_RELAY, OUTPUT);
 
-    if (waitFor(Particle.connected, 10000)) {
-        Particle.publish("GateController-2", "Started with network");
+    // Unlock the gate while waiting for network
+    digitalWrite(GATE_LOCK_RELAY, GATE_RELAY2_UNLOCK);
 
-        Particle.function("setLED", setLED); // For testing
-        Particle.function("setGateOpen", setGateOpen);
-        Particle.function("setGateLock", setGateLock);
+    waitUntil(Particle.connected);
 
-        // Particle.variable("isMotion", isMotion);
-        Particle.variable("isOpenConfirmed", isOpenConfirmed);
-        Particle.variable("isLocked", isLocked);
-        Particle.variable("lastLockTime", lastLockTime);
-        Particle.variable("lastUnlockTime", lastUnlockTime);
-    }
+    Particle.publish("GateController-2", "Started with network");
+
+    Particle.function("setLED", setLED); // For testing
+    Particle.function("setGateOpen", setGateOpen);
+    Particle.function("setGateLock", setGateLock);
+
+    // Particle.variable("isMotion", isMotion);
+    Particle.variable("isOpenConfirmed", isOpenConfirmed);
+    Particle.variable("isLocked", isLocked);
+    Particle.variable("lastLockTime", lastLockTime);
+    Particle.variable("lastUnlockTime", lastUnlockTime);
 
     // Particle.publish("Motion", isMotion ? "true" : "false");
     Particle.publish("Locked", isLocked ? "true" : "false");
